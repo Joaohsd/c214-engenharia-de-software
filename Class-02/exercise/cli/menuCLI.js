@@ -35,7 +35,7 @@ export default class MenuCLI{
                 break;
             }
             else{
-                this.processOption(option);
+                await this.processOption(option);
             }
         }
     }
@@ -48,66 +48,75 @@ export default class MenuCLI{
         });
     }
 
-    processOption(option){
+    async processOption(option){
         switch (option) {
             case "1":
-                this.addMovie();
+                await this.addMovie();
                 break;
             case "2":
-                this.setMovieAsWatched();
+                await this.setMovieAsWatched();
                 break;
             case "3":
-                this.rateMovie();
+                await this.rateMovie();
                 break;
             case "4":
                 this.showMovies();
                 break;
             default:
-                console.log("Wrong entry. Type a valid option!");
+                console.log('\x1b[31m%s\x1b[0m', "Wrong entry. Type a valid option!");
                 break;
         }
     }
 
     async addMovie(){
+        let title;
+        let releasedYear;
+        let genre;
+        let durationInMinutes;
         try{
-            let title = await this.question('Enter the movie title:');
-            let releasedYear = await this.question('Enter the year it was released:');
-            releasedYear = parseInt(releasedYear);
-            let genre = await this.question('Enter the genre: (male/female)').toLowerCase();
-            let durationInMinutes = await this.question('Enter the duration in minutes:');
+            title = await this.question('Enter the movie title:');
+            releasedYear = await this.question('Enter the year it was released:');
+            releasedYear = parseInt(releasedYear.trim());
+            genre = await this.question('Enter the genre (male/female):');
+            genre.toLowerCase();
+            durationInMinutes = await this.question('Enter the duration in minutes:');
             durationInMinutes = parseInt(durationInMinutes);
         }
         catch(error){
             console.log("You've typed something wrong!");
             return;
         }
-        const movie = Movie(title, releasedYear, genre, durationInMinutes);
-        this._moviesList.push(movie);
-        console.log(`Movie ${title} added to the list!`);
+        if(this.searchForMovie(title)){
+            console.log('\x1b[31m%s\x1b[0m', "Movie already exists!");
+        }
+        else{
+            this._moviesList.push(new Movie(title, releasedYear, genre, durationInMinutes));
+            console.log('\x1b[33m%s\x1b[0m',`Movie ${title} added to the list!`);
+        }
     }
 
     async setMovieAsWatched(){
         const title = await this.question('Enter the movie title: ');
-        const movie = await this.searchForMovie(title);
+        const movie = this.searchForMovie(title);
 
         if(movie){
             movie.setWatched();
-            console.log(`${title} has been marked as watched.`);
+            console.log('\x1b[33m%s\x1b[0m',`${title} has been marked as watched.`);
         } else {
-            console.log(`${title} not found in the List.`);
+            console.log('\x1b[31m%s\x1b[0m',`${title} not found in the List.`);
         }
     }
 
     async rateMovie(){
         const title = await this.question('Enter the movie title: ');
-        const movie = await this.searchForMovie(title);
+        const movie = this.searchForMovie(title);
 
         if(movie){
             const score = await this.question('Score of the movie: ');
             movie.rateMovie(score);
-            console.log(`${title} has been marked as watched.`);
+            console.log('\x1b[33m%s\x1b[0m',`${title} has been rated.`);
         } else {
-            console.log(`${title} not found in the List.`);
+            console.log('\x1b[31m%s\x1b[0m',`${title} not found in the List.`);
         }
     }
 
@@ -122,6 +131,6 @@ export default class MenuCLI{
     }
 
     searchForMovie(title){
-        return this._moviesList.find(element => element.title === title);
+        return this._moviesList.find(element => element._title === title);
     }
 }
